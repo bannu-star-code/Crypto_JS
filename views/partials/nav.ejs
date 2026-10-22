@@ -1,0 +1,13 @@
+<nav aria-label="Main navigation">
+  <a href="/">Coin search</a>
+  <a href="/portfolio/"<% if (currentPage === "portfolio") { %> aria-current="page"<% } %>>My portfolio</a>
+  <% if (user) { %>
+    <form method="post" action="/logout/">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button type="submit">Log out</button>
+    </form>
+  <% } else { %>
+    <a href="/login/">Log in</a>
+    <% if (allowSignups) { %><a href="/signup/">Sign up</a><% } %>
+  <% } %>
+</nav>
