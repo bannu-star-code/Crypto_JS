@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "description": "Coin price search and a private Delta Exchange portfolio",
-  "main": "src/server.js",
+  "main": "src/index.js",
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",

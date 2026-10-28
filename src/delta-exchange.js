@@ -119,6 +119,14 @@ class DeltaExchangeClient {
     if (!response.ok) {
       const detail = errorDetail(payload);
       if ([401, 403].includes(response.status)) {
+        const apiError = payload?.error;
+        const errorCode =
+          apiError && typeof apiError === "object" ? apiError.code : apiError;
+        if (errorCode === "ip_not_whitelisted_for_api_key") {
+          throw new DeltaExchangeAPIError(
+            "Delta rejected this request because the app server's public IP is not on the API key's IP whitelist. Add the server's outbound IP to the key's whitelist in Delta Exchange. Local and hosted environments may use different outbound IPs.",
+          );
+        }
         throw new DeltaExchangeAPIError(
           `Delta Exchange returned HTTP ${response.status}${detail ? `: ${detail}` : "."} Check the Delta API key/secret, Read Data and Trading permissions, and the API key's IP whitelist.`,
         );

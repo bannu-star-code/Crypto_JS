@@ -60,3 +60,20 @@ test("Delta API explains insufficient available balance errors", async () => {
     /additional margin required: 12.5.*available INR balance/,
   );
 });
+
+test("Delta API identifies an IP whitelist rejection", async () => {
+  const client = new DeltaExchangeClient({
+    apiKey: "key",
+    apiSecret: "secret",
+    fetchImpl: async () =>
+      Response.json(
+        { success: false, error: { code: "ip_not_whitelisted_for_api_key" } },
+        { status: 401 },
+      ),
+  });
+
+  await assert.rejects(
+    client.getWalletBalances(),
+    /app server's public IP is not on the API key's IP whitelist.*outbound IP/,
+  );
+});

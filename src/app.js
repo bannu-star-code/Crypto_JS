@@ -118,7 +118,7 @@ function createApp({
       },
     }),
   );
-  app.use("/assets", express.static(path.join(__dirname, "..", "public")));
+  app.use(express.static(path.join(__dirname, "..", "public")));
   app.use(express.urlencoded({ extended: false, limit: "16kb" }));
   app.use(
     session({

@@ -41,6 +41,8 @@ DELTA_API_SECRET=your_delta_api_secret
 
 Delta's [official API documentation](https://docs.delta.exchange/) indicates account endpoints and order placement require **Trading** permission. That permission may allow other trading actions on the account. Use a dedicated, IP-restricted key and understand its permissions. Never commit or paste credentials into source control or chat.
 
+If Delta returns `ip_not_whitelisted_for_api_key`, add the public outbound IP of the machine running this app to the API key's IP whitelist in Delta Exchange. The app server's IP is what Delta checks, not the browser's IP. Local development and hosted deployments may have different outbound IPs; use a stable egress IP for hosted deployments and allowlist that address.
+
 Only Delta products reported as live operational spot markets are offered. Each order requires a preview and a separate confirmation within five minutes. Confirmations are signed, user-bound, revalidated against the current market rules, and accepted once. Market INR sizing is an estimate; submission does not guarantee a fill. The order-preview and confirmation endpoints accept loopback requests only. Run locally on `127.0.0.1`; do not expose the trading app publicly. Keep any hosted portfolio private and do not configure an exchange key there unless the access model and key permissions have been reviewed.
 
 ## Database
@@ -71,6 +73,23 @@ The application creates its own `users`, `sessions`, and `used_trade_confirmatio
 ### Existing Django accounts and data
 
 The former local Django database remains at `db.sqlite3`; the JavaScript app does not open, migrate, or overwrite it. Django user passwords use a different password-hash format from the JavaScript app, so the existing password hashes cannot be copied as bcrypt hashes. Create new JavaScript accounts (or plan a separately reviewed export/import and password-reset process) before retiring the Django deployment. No automatic migration is performed.
+
+## Deploying to Vercel
+
+The app can be deployed from GitHub as a Vercel Express application. Vercel runs it as a serverless function, so configure a persistent PostgreSQL database; the local SQLite database is not suitable for deployment.
+
+1. Import this repository from GitHub in Vercel and use the repository root as the project root. Vercel detects the Express entry point automatically.
+2. Set the project environment variables:
+   - `NODE_ENV=production`
+   - `SESSION_SECRET` to a long, random secret
+   - `DATABASE_URL` to a PostgreSQL connection string (or use `SUPABASE_DB_URL` for Supabase)
+   - `ALLOW_SIGNUPS=false`
+   - `TRUST_PROXY=true`
+   - `DELTA_API_KEY` and `DELTA_API_SECRET` only if you intend to fetch private portfolio data
+3. Deploy the project. On the first request, the app initializes its JavaScript tables in the configured database.
+4. Create an account against that same database from a trusted local terminal. Set `DATABASE_URL` (or `SUPABASE_DB_URL`) and run `npm run create-user -- <username>`; the command prompts for the password without echoing it.
+
+The app's dashboard is public; portfolio pages require login, and registrations are disabled in production. Enable Vercel deployment protection if the entire site must be private. Do not put credentials in GitHub or paste them into chat; configure them in Vercel's encrypted environment-variable settings. Vercel's outbound IP must also be accepted by Delta's API-key whitelist for private portfolio requests. Check Vercel's current egress-IP options for your plan before adding an allowlist; without a stable, allowlistable egress IP, Delta may return `ip_not_whitelisted_for_api_key`. Hosted spot-order submissions remain disabled because the app only permits trading requests from loopback clients.
 
 ## Deploying to Render
 
