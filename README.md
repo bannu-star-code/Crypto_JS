@@ -59,12 +59,14 @@ For Supabase, use the PostgreSQL connection string (not an `anon` or `service_ro
 SUPABASE_DB_URL=postgresql://user:password@host:5432/database
 ```
 
-For a PostgreSQL server whose certificate is signed by a private CA, set `DATABASE_SSL_CA_FILE` to the path of the trusted CA PEM file. Supabase provides its database CA certificate in the project's **Database → Settings → SSL Configuration** page; download it and point this variable to that PEM file. For example:
+For a PostgreSQL server whose certificate is signed by a private CA, configure the trusted CA PEM certificate. Supabase provides its database CA certificate in the project's **Database → Settings → SSL Configuration** page. Locally, set `DATABASE_SSL_CA_FILE` to the path of the downloaded PEM file. On Vercel, where a local machine's file path will not exist, set `DATABASE_SSL_CA_PEM` to the certificate contents in the project's environment variables (multiline PEM or literal `\n` line breaks). Set only one of these variables. For example:
 
 ```env
 SUPABASE_DB_URL=postgresql://postgres.[project-ref]:[password]@[host]:5432/postgres
 DATABASE_SSL_CA_FILE=/absolute/path/to/supabase-ca.crt
 ```
+
+For Vercel, configure `SUPABASE_DB_URL` and `DATABASE_SSL_CA_PEM` in the Vercel project settings instead of setting `DATABASE_SSL_CA_FILE`.
 
 The app removes TLS query flags from the URL when applying its explicit verified TLS configuration, so `sslmode=require` in a Supabase connection string will not override the supplied CA. It continues to verify the server certificate; do not use `NODE_TLS_REJECT_UNAUTHORIZED=0`. If this error occurs with a local network, VPN, or proxy, obtain the correct CA certificate from your database administrator or network administrator rather than trusting an unverified certificate.
 

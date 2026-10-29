@@ -45,6 +45,18 @@ test("Supabase PostgreSQL connections verify TLS by default", (t) => {
   assert.equal(db.client.config.connection.ssl.rejectUnauthorized, true);
 });
 
+test("PostgreSQL TLS accepts an inline CA certificate with escaped newlines", (t) => {
+  const ca = "-----BEGIN CERTIFICATE-----\ntrusted test CA\n-----END CERTIFICATE-----\n";
+  const db = createDatabase({
+    DATABASE_URL: "postgresql://localhost/database",
+    DATABASE_SSL_CA_PEM: ca.replace(/\n/g, "\\n"),
+  });
+  t.after(() => db.destroy());
+
+  assert.equal(db.client.config.connection.ssl.ca, ca);
+  assert.equal(db.client.config.connection.ssl.rejectUnauthorized, true);
+});
+
 test("production requires an explicit database connection", () => {
   assert.throws(
     () => createDatabase({ NODE_ENV: "production" }),
@@ -60,7 +72,19 @@ test("missing PostgreSQL CA file reports how to fix its configured path", () => 
         DATABASE_SSL_CA_FILE: "/tmp/crypto-portfolio-test-missing-ca.pem",
       }),
     {
-      message: /DATABASE_SSL_CA_FILE points to a file that does not exist.*Download the CA certificate from your Supabase project/,
+      message: /DATABASE_SSL_CA_FILE points to a file that does not exist.*For Vercel, set DATABASE_SSL_CA_PEM/,
     },
+  );
+});
+
+test("PostgreSQL TLS rejects configuring both CA sources", () => {
+  assert.throws(
+    () =>
+      createDatabase({
+        SUPABASE_DB_URL: "postgresql://localhost/database",
+        DATABASE_SSL_CA_FILE: "/tmp/ca.pem",
+        DATABASE_SSL_CA_PEM: "test CA",
+      }),
+    /Set only one of DATABASE_SSL_CA_FILE or DATABASE_SSL_CA_PEM/,
   );
 });

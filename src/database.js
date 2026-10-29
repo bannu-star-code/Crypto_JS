@@ -8,20 +8,26 @@ function createDatabase(env = process.env) {
 
   if (databaseUrl) {
     const caFile = env.DATABASE_SSL_CA_FILE;
-    let ca;
+    const caPem = env.DATABASE_SSL_CA_PEM;
+    if (caFile && caPem) {
+      throw new Error(
+        "Set only one of DATABASE_SSL_CA_FILE or DATABASE_SSL_CA_PEM.",
+      );
+    }
+    let ca = caPem?.replace(/\\n/g, "\n");
     if (caFile) {
       try {
         ca = fs.readFileSync(path.resolve(caFile), "utf8");
       } catch (error) {
         if (error.code !== "ENOENT") throw error;
         throw new Error(
-          `DATABASE_SSL_CA_FILE points to a file that does not exist: ${path.resolve(caFile)}. Download the CA certificate from your Supabase project's Database > Settings > SSL Configuration, save it at this path, or update DATABASE_SSL_CA_FILE to its actual location.`,
+          `DATABASE_SSL_CA_FILE points to a file that does not exist: ${path.resolve(caFile)}. For local deployments, save the trusted CA certificate at this path or update DATABASE_SSL_CA_FILE. For Vercel, set DATABASE_SSL_CA_PEM to the certificate contents instead.`,
           { cause: error },
         );
       }
     }
     const ssl =
-      supabaseUrl || caFile
+      supabaseUrl || caFile || caPem
         ? {
             rejectUnauthorized: true,
             ...(ca ? { ca } : {}),
